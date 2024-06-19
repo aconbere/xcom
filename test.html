@@ -5,7 +5,7 @@
         <link href="main.css" rel="stylesheet" />
     </head>
     <body>
-        <template id="nav-header-template">
+        <template id="app-root-template">
             <style>
                 .active {
                     font-weight: bold;
@@ -47,10 +47,11 @@
 
         <template id="blog-post-template">
             <h2>Blog Post</h2>
+            <button x-event="back">back</button>
             <p id="content">Lorem Ipsum</p>
         </template>
 
-        <nav-header></nav-header>
+        <app-root></app-root>
     </body>
 </html>
 

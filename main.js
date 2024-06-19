@@ -1,11 +1,182 @@
 import { createMachine, createActor, assign} from 'https://cdn.skypack.dev/xstate';
 
+const photographyPageState = {
+    id: "photography-page",
+    state: {},
+}
+
+const aboutPageState = {
+    id: "about-page",
+    state: {},
+}
+
+const blogPostState = {
+    id: "blog-post",
+    state: {},
+}
+
+const blogListState = {
+    id: "blog-list",
+    initial: "paginating",
+    context: {page: 1},
+    states: {
+        paginating: {
+            on: {
+                next: {
+                    actions: assign({
+                        page: ({context}) => context.page + 1
+                    })
+                },
+                previous: {
+                    actions: assign({
+                        page: ({context}) => context.page - 1
+                    })
+                }
+            }
+        },
+    },
+}
+
+const blogPageState = {
+    id: "blog-page",
+    initial: "list",
+    context: {
+        postID: "",
+    },
+    states: {
+        list: {
+            invoke: {
+                systemId: blogListState.id,
+                id: blogListState.id,
+                src: createMachine(blogListState),
+            },
+            on: {
+                post: {
+                    target: "post",
+                    actions: assign({
+                        postID: ({event}) => event.postID
+                    }),
+                }
+            }
+        },
+        post: {
+            invoke: {
+                systemId: blogPostState.id,
+                id: blogPostState.id,
+                src: createMachine(blogPostState),
+            },
+            on: {
+                back: {
+                    target: "list",
+                }
+            }
+        },
+    },
+}
+
+const rootState =  {
+    id: "root-state",
+    initial: "blog",
+    states: {
+        blog: {
+            invoke: {
+                systemId: blogPageState.id,
+                id: blogPageState.id,
+                src: createMachine(blogPageState),
+            },
+            on: {
+                "about": {
+                    target: "about",
+                },
+                "photography": {
+                    target: "photography",
+                },
+            }
+        },
+        about: {
+            invoke: {
+                systemId: aboutPageState.id,
+                id: aboutPageState.id,
+                src: createMachine(aboutPageState),
+            },
+            on: {
+                "blog": {
+                    target: "blog",
+                },
+                "photography": {
+                    target: "photography",
+                },
+            },
+        },
+       photography: {
+            invoke: {
+                systemId: photographyPageState.id,
+                id: photographyPageState.id,
+                src: createMachine(photographyPageState),
+            },
+            on: {
+                "about": {
+                    target: "about",
+                },
+                "blog": {
+                    target: "blog",
+                },
+            },
+        },
+    },
+}
+
+
+/*
+ * options: {
+ *  definition: XState::MachineDefinition,
+ *  initFunction: (shadowRoot: HTML::ShadowRoot) => {}
+ *  updateFunction: (shadowRoot: HTML::ShadowRoot) => {}
+ * }
+ */
+const createRoot = (
+    options
+) => {
+    const machine = createMachine(options.definition);
+    const actor = createActor(machine, {systemID: "root-id"});
+
+    customElements.define(
+        "app-root",
+        class extends HTMLElement {
+            constructor() {
+                super();
+                const template = document.getElementById("app-root-template");
+                const shadowRoot = this.attachShadow({ mode: "open" });
+                shadowRoot.appendChild(template.content.cloneNode(true));
+                this._shadowRoot = shadowRoot;
+
+                actor.start();
+                this._actor = actor;
+            }
+
+            connectedCallback() {
+                options.initFunction(this._shadowRoot, this._actor);
+                options.updateFunction(this._shadowRoot, this._actor, this);
+                this._actor.subscribe(() => {
+                    options.updateFunction(this._shadowRoot, this._actor)
+                });
+                
+            }
+        },
+    );
+
+    return {
+        appRoot:actor
+    }
+}
+
 
 /*
  * options: {
  *  name: string,
  *  templateID: string,
- *  definition: XState::MachineDefinition,
+ *  root: Actor,
+ *  actorID: string,
  *  initFunction: (shadowRoot: HTML::ShadowRoot) => {}
  *  updateFunction: (shadowRoot: HTML::ShadowRoot) => {}
  * }
@@ -23,10 +194,13 @@ const createElement = (
                 shadowRoot.appendChild(template.content.cloneNode(true));
                 this._shadowRoot = shadowRoot;
 
-                const machine = createMachine(options.definition);
-                const actor = createActor(machine, {systemID: options.name});
-                actor.start();
-                this._actor = actor;
+                const actor = options.root.system.get(options.actorID);
+
+                if (actor === null || actor === undefined) {
+                    throw `Actor ${options.actorID} not found`;
+                }
+
+                this._actor = actor
             }
 
             connectedCallback() {
@@ -41,46 +215,9 @@ const createElement = (
     );
 }
 
-createElement(
+const {appRoot} = createRoot(
     {
-        name: "nav-header",
-        templateID: "nav-header-template",
-        definition: {
-            id: "nav-header",
-            initial: "blog",
-            states: {
-                blog: {
-                    on: {
-                        "about": {
-                            target: "about",
-                        },
-                        "photography": {
-                            target: "photography",
-                        },
-                    }
-                },
-                about: {
-                    on: {
-                        "blog": {
-                            target: "blog",
-                        },
-                        "photography": {
-                            target: "photography",
-                        },
-                    },
-                },
-               photography: {
-                    on: {
-                        "about": {
-                            target: "about",
-                        },
-                        "blog": {
-                            target: "blog",
-                        },
-                    },
-                },
-            },
-        },
+        definition: rootState,
 
         initFunction: (shadowRoot, actor) => {
             const buttons = shadowRoot.querySelectorAll("button")
@@ -126,28 +263,21 @@ createElement(
     {
         name: "blog-list",
         templateID: "blog-list-template",
-        definition: {
-            id: "blog-list",
-            initial: "paginating",
-            context: {page: 1},
-            states: {
-                paginating: {
-                    on: {
-                        next: {
-                            actions: assign({
-                                page: ({context}) => context.page + 1
-                            })
-                        },
-                        previous: {
-                            actions: assign({
-                                page: ({context}) => context.page - 1
-                            })
-                        }
-                    }
-                },
-            },
-        },
-        initFunction: () => {
+        root: appRoot,
+        actorID: "blog-list",
+        initFunction: (shadowRoot, actor) => {
+            const buttons = shadowRoot.querySelectorAll("button[x-event='post']")
+            const blogPageActor = actor.system.get("blog-page");
+
+            Array.from(buttons).forEach((b) => {
+                b.addEventListener("click", (el) => {
+                    const postID = el.target.getAttribute("x-event-id");
+                    blogPageActor.send({
+                        type: "post",
+                        postID: postID,
+                    });
+                });
+            });
         },
         updateFunction: () => {
         },
@@ -158,14 +288,18 @@ createElement(
     {
         name: "blog-post",
         templateID: "blog-post-template",
-        definition: {
-            id: "blog-post",
-        },
-        initFunction: () => {
+        root: appRoot,
+        actorID: "blog-post",
+        initFunction: (shadowRoot, actor) => {
+            const blogPageActor = actor.system.get("blog-page");
+            const button = shadowRoot.querySelector("button[x-event='back']")
+            button.addEventListener("click", () => {
+                blogPageActor.send({type: "back"});
+            });
         },
         updateFunction: (shadowRoot, _actor, el) => {
            const content = shadowRoot.querySelector("p#content"); 
-            content.innerHTML = `This is post ${el.postID}`;
+           content.innerHTML = `This is post ${el.postID}`;
         },
     }
 )
@@ -174,34 +308,9 @@ createElement(
     {
         name: "blog-page",
         templateID: "blog-page-template",
-        context: {
-            postID: "",
-        },
-        definition: {
-            id: "blog",
-            initial: "list",
-            states: {
-                list: {
-                    on: {
-                        post: {
-                            target: "post",
-                            actions: assign({
-                                postID: ({event}) => event.postID
-                            }),
-                        }
-                    }
-                },
-                post: {
-                    on: {
-                        back: {
-                            target: "list",
-                        }
-                    }
-                },
-            },
-        },
-        initFunction: (_shadowRoot) => {
-        },
+        root: appRoot,
+        actorID: "blog-page",
+        initFunction: (_shadowRoot) => { },
         updateFunction: (shadowRoot, actor) => {
             const snapshot = actor.getSnapshot();
             const containerEl = shadowRoot.querySelector("#container");
@@ -213,16 +322,6 @@ createElement(
                 // reference any kind of event bus, or referential actor that could handle
                 // the specific event.
                 const blogListEl = document.createElement("blog-list");
-                blogListEl.addEventListener("click", (el) => {
-                    console.log("actor.system", actor.system.get("blog-page"));
-                    if (el.originalTarget.getAttribute("x-event") === "post") {
-                        const postID = el.originalTarget.getAttribute("x-event-id");
-                        actor.send({
-                            type: "post",
-                            postID: postID,
-                        });
-                    }
-                });
                 containerEl.replaceChildren(blogListEl);
             } else if (snapshot.value === "post") {
                 const blogPostEl = document.createElement("blog-post");
@@ -237,10 +336,8 @@ createElement(
     {
         name: "about-page",
         templateID: "about-page-template",
-        definition: {
-            id: "about",
-            states: {},
-        },
+        root: appRoot,
+        actorID: "about-page",
         initFunction: () => {
         },
         updateFunction: () => {
@@ -252,10 +349,8 @@ createElement(
     {
         name: "photography-page",
         templateID: "photography-page-template",
-        definition: {
-            id: "photography",
-            states: {},
-        },
+        root: appRoot,
+        actorID: "photography-page",
         initFunction: () => {
         },
         updateFunction: () => {
