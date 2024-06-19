@@ -18,13 +18,13 @@ const createElement = (
         class extends HTMLElement {
             constructor() {
                 super();
-                let template = document.getElementById(options.templateID);
+                const template = document.getElementById(options.templateID);
                 const shadowRoot = this.attachShadow({ mode: "open" });
                 shadowRoot.appendChild(template.content.cloneNode(true));
                 this._shadowRoot = shadowRoot;
 
                 const machine = createMachine(options.definition);
-                const actor = createActor(machine);
+                const actor = createActor(machine, {systemID: options.name});
                 actor.start();
                 this._actor = actor;
             }
@@ -81,6 +81,7 @@ createElement(
                 },
             },
         },
+
         initFunction: (shadowRoot, actor) => {
             const buttons = shadowRoot.querySelectorAll("button")
             Array.from(buttons).forEach((b) => {
@@ -89,9 +90,11 @@ createElement(
                 };
             });
         },
+
         updateFunction: (shadowRoot, actor) => {
             const snapshot = actor.getSnapshot();
             const buttons = shadowRoot.querySelectorAll("button")
+
             Array.from(buttons).forEach((b) => {
                 if(b.id === `nav.${snapshot.value}`) {
                     b.classList.add("active");
@@ -103,14 +106,17 @@ createElement(
             const containerEl = shadowRoot.querySelector("#container");
 
             if (snapshot.value === "blog") {
-                const el = document.createElement("blog-page");
-                containerEl.replaceChildren(el);
+                containerEl.replaceChildren(
+                    document.createElement("blog-page")
+                );
             } else if (snapshot.value === "about") {
-                const el = document.createElement("about-page");
-                containerEl.replaceChildren(el);
+                containerEl.replaceChildren(
+                    document.createElement("about-page")
+                );
             } else if (snapshot.value === "photography") {
-                const el = document.createElement("photography-page");
-                containerEl.replaceChildren(el);
+                containerEl.replaceChildren(
+                    document.createElement("photography-page")
+                );
             }
         },
     }
@@ -200,8 +206,15 @@ createElement(
             const snapshot = actor.getSnapshot();
             const containerEl = shadowRoot.querySelector("#container");
             if (snapshot.value === "list") {
+                // Here is the biggest issue
+                //
+                // Ideally I would attach this click event in the blog-list compponent
+                // and then send a message UP the tree. However I don't have a way to
+                // reference any kind of event bus, or referential actor that could handle
+                // the specific event.
                 const blogListEl = document.createElement("blog-list");
                 blogListEl.addEventListener("click", (el) => {
+                    console.log("actor.system", actor.system.get("blog-page"));
                     if (el.originalTarget.getAttribute("x-event") === "post") {
                         const postID = el.originalTarget.getAttribute("x-event-id");
                         actor.send({
