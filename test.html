@@ -3,147 +3,54 @@
     <head>
         <script type="module" src="./main.js"></script>
         <link href="main.css" rel="stylesheet" />
-        
     </head>
     <body>
-        <template id="light-switch-template">
+        <template id="nav-header-template">
             <style>
-                .switch {
-                  display: inline-block;
-                  height: 34px;
-                  position: relative;
-                  width: 60px;
-                }
-
-                .switch input {
-                  display:none;
-                }
-
-                .slider {
-                  background-color: #ccc;
-                  bottom: 0;
-                  cursor: pointer;
-                  left: 0;
-                  position: absolute;
-                  right: 0;
-                  top: 0;
-                  transition: .4s;
-                }
-
-                .slider:before {
-                  background-color: #fff;
-                  bottom: 4px;
-                  content: "";
-                  height: 26px;
-                  left: 4px;
-                  position: absolute;
-                  transition: .4s;
-                  width: 26px;
-                }
-
-                input:checked + .slider {
-                  background-color: #66bb6a;
-                }
-
-                input:checked + .slider:before {
-                  transform: translateX(26px);
-                }
-
-                .slider.round {
-                  border-radius: 34px;
-                }
-
-                .slider.round:before {
-                  border-radius: 50%;
+                .active {
+                    font-weight: bold;
                 }
             </style>
-            <div class="container">
-                <label class="switch" for="checkbox">
-                    <input type="checkbox" id="checkbox" name="checkbox"/>
-                    <div class="slider round"></div>
-                </label>
+            <div>
+                <button id="nav.blog" x-event="blog">blog</button>
+                <button id="nav.about" x-event="about">about</button>
+                <button id="nav.photography" x-event="photography">photography</button>
+            </div>
+            <div id="container"></div>
+        </template>
+
+        <template id="blog-page-template">
+            <h1>Blog Page</h1>
+            <div id="container"></div>
+        </template>
+
+        <template id="about-page-template">
+            <h1>About Page</h1>
+            <div id="container"></div>
+        </template>
+
+        <template id="photography-page-template">
+            <h1>Photography Page</h1>
+            <div id="container"></div>
+        </template>
+
+        <template id="blog-list-template">
+            <h2>Blog List</h2>
+            <div id="blog-list">
+                <ul>
+                    <li><button x-event="post" x-event-id="a">First Post</button></li>
+                    <li><button x-event="post" x-event-id="b">First Second</button></li>
+                    <li><button x-event="post" x-event-id="c">First ThirdPost</button></li>
+                </ul>
             </div>
         </template>
 
-        <template id="light-bulb-template">
-            <style>
-                .graphic {
-                  width: 300px;
-                  box-sizing: border-box;
-                }
-
-                .svg-container {
-                  position: relative;
-                  width: 100%;
-                  height: 0;
-                  padding-bottom: 100%;
-
-                  & > .svg-content {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                  }
-                }
-
-
-                .container {
-                  margin: 0 auto;
-                }
-
-                .light-bulb {
-                  #bulb {
-                    fill: #dce7eb;
-                  }
-                  #wires {
-                    fill: #adc4c9;
-                  }
-                  #filament {
-                    fill: #adc4c9;
-                    opacity: 0.5;
-                  }
-                  #ring {}
-                  #base {}
-                  
-                  &.is-activated {
-                    #bulb {
-                      fill: #FFC843;
-                    }
-                    #wires {
-                      fill: #D49000;
-                    }
-                    #filament {
-                      fill: #fff;
-                      opacity: 1;
-                    }
-                    #ring {}
-                    #base {}
-                  }
-                }
-            </style>
-            <div class="graphic">
-                <div class="svg-container">
-                <svg id="bulb" class="svg-content light-bulb" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512.001 512.001">
-                    <path id="bulb" d="M315.764 331.543c0-48.588 88.86-76.217 88.86-182.92C404.623 66.544 338.083 0 256 0S107.38 66.542 107.38 148.624c0 106.702 88.86 134.33 88.86 182.92h119.526z" />
-                    <path id="wires" d="M227.215 339.787c-4.554 0-8.244-3.69-8.244-8.244 0-42.72-12.296-61.258-25.315-80.884-12.092-18.228-24.595-37.075-24.595-73.778 0-4.553 3.69-8.244 8.244-8.244s8.244 3.69 8.244 8.244c0 31.73 10.124 46.99 21.845 64.662 13.156 19.83 28.065 42.307 28.065 90 0 4.552-3.69 8.243-8.243 8.243zM284.785 339.787c-4.554 0-8.244-3.69-8.244-8.244 0-47.692 14.91-70.168 28.066-90 11.72-17.67 21.845-32.93 21.845-64.66 0-4.554 3.69-8.245 8.245-8.245 4.554 0 8.244 3.69 8.244 8.244 0 36.703-12.504 55.55-24.596 73.777-13.02 19.625-25.316 38.163-25.316 80.883.002 4.553-3.688 8.244-8.243 8.244z" />
-                    <path id="filament" d="M282.882 214.907c-2.496 0-4.86-1.132-6.425-3.078L256 186.39l-20.455 25.44c-1.565 1.945-3.928 3.077-6.425 3.077-2.496 0-4.86-1.132-6.425-3.078l-26.88-33.427c-2.854-3.548-2.29-8.738 1.26-11.592 3.548-2.852 8.737-2.29 11.59 1.26l20.456 25.438 20.457-25.438c1.565-1.946 3.928-3.078 6.425-3.078s4.86 1.132 6.425 3.078l20.456 25.438 20.455-25.438c2.854-3.547 8.042-4.112 11.592-1.26 3.548 2.855 4.11 8.044 1.26 11.593l-26.88 33.426c-1.57 1.945-3.932 3.077-6.428 3.077z" />
-                    <path id="ring" d="M190.877 310.85c3.37 6.654 5.362 13.44 5.362 20.693h119.525c0-7.254 1.992-14.04 5.362-20.692h-130.25z" opacity=".1" />
-                    <g id="base">
-                        <circle cx="256.004" cy="491.738" r="20.264" fill="#5C6670" />
-                        <path d="M256 471.473c-11.193 0-20.263 9.072-20.263 20.264 0 .897.078 1.774.19 2.64 6.33 2.027 13.072 3.13 20.073 3.13 7 0 13.743-1.104 20.072-3.13.112-.866.19-1.743.19-2.64 0-11.192-9.07-20.264-20.26-20.264z" opacity=".1" />
-                        <circle cx="256.004" cy="431.741" r="59.997" fill="#333E48" />
-                        <path d="M256 371.745c-33.135 0-59.995 26.862-59.995 59.996 0 4.358.476 8.602 1.36 12.695h117.273c.884-4.094 1.36-8.337 1.36-12.694-.002-33.134-26.864-59.995-59.997-59.995z" opacity=".1" />
-                        <path d="M341.083 411.442c0 11.164-9.135 20.3-20.298 20.3h-129.57c-11.163 0-20.298-9.135-20.298-20.3v-63.054c0-11.164 9.135-20.3 20.3-20.3h129.568c11.163 0 20.298 9.136 20.298 20.3v63.054z" fill="#5C6670" />
-                        <path d="M170.922 352.232h170.164v16.49H170.922zM170.922 391.112h170.164v16.49H170.922z" fill="#333E48" />
-                    </g>
-                </svg>
-                <div>
-            </div>
+        <template id="blog-post-template">
+            <h2>Blog Post</h2>
+            <p id="content">Lorem Ipsum</p>
         </template>
 
-        <light-switch></light-switch>
-        <light-bulb></light-bulb>
+        <nav-header></nav-header>
     </body>
 </html>
 
